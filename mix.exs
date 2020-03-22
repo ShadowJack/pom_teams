@@ -20,7 +20,8 @@ defmodule PomTeams.MixProject do
   def application do
     [
       mod: {PomTeams.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      extra_applications: [:logger, :runtime_tools],
+      applications: [:gen_state_machine]
     ]
   end
 
@@ -39,7 +40,8 @@ defmodule PomTeams.MixProject do
       {:ecto_sql, "~> 3.1"},
       {:postgrex, ">= 0.0.0"},
       {:jason, "~> 1.0"},
-      {:plug_cowboy, "~> 2.0"}
+      {:plug_cowboy, "~> 2.0"},
+      {:gen_state_machine, "~> 2.0"}
     ]
   end
 
