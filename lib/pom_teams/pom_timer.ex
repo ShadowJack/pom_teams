@@ -138,22 +138,27 @@ defmodule PomTeams.PomTimer do
     {:next_state, @state_running, updated_data}
   end
 
-  # @doc """
-  # Handle stop action
-  # """
-  # def handle_event(:cast, @action_stop, @state_running, data) do
-  #   updated_data = data
-  #     |> remove_round_timer()
-  #     |> reset_rounds()
-  # 
-  #   {:next_state, @state_stopped, updated_data}
-  # end
-  # def handle_event(:cast, @action_stop, @state_stopped, data) do
-  #   updated_data = data
-  #     |> reset_rounds()
-  # 
-  #   {:next_state, @state_stopped, updated_data}
-  # end
+  @doc """
+  Handle stop action
+  """
+  def handle_event(:cast, @action_stop, @state_running, data) do
+    updated_data =
+      data
+      |> remove_round_timer()
+      |> reset_round
+      |> reset_rounds()
+
+    {:next_state, @state_stopped, updated_data}
+  end
+
+  def handle_event(:cast, @action_stop, @state_stopped, data) do
+    updated_data =
+      data
+      |> reset_round
+      |> reset_rounds()
+
+    {:next_state, @state_stopped, updated_data}
+  end
 
   @doc """
   Handle state request

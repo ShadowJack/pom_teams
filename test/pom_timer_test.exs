@@ -69,6 +69,19 @@ defmodule PomTeams.PomTimerTest do
     end
   end
 
+  test "stop action pauses and resets everything" do
+    {:ok, timer} = PomTimer.start_link(build_settings())
+    Process.sleep(1500)
+
+    PomTimer.stop(timer)
+
+    assert PomTimer.get_seconds_elapsed(timer) == 0
+    assert PomTimer.get_state(timer) == :stopped
+
+    # TODO: check rounds count was reset 
+    # by manually sending :round_finished events
+  end
+
   defp build_settings() do
     %Settings{
       user_id: 1,
