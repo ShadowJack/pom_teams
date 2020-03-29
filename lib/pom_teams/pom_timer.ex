@@ -7,15 +7,15 @@ defmodule PomTeams.PomTimer do
   alias PomTeams.Schema.Settings
 
   @type data :: %{
-    settings: Settings.t(), 
-    rounds_finished: number(), 
-    # Reference to the current timer 
-    # that will ring at the end of the round
-    timer_ref: :timer.tref() | nil, 
-    # Seconds left until the end of the round
-    # nil at the start when the timer is not started yet
-    seconds_left: number() | nil
-  }
+          settings: Settings.t(),
+          rounds_finished: number(),
+          # Reference to the current timer 
+          # that will ring at the end of the round
+          timer_ref: :timer.tref() | nil,
+          # Seconds left until the end of the round
+          # nil at the start when the timer is not started yet
+          seconds_left: number() | nil
+        }
   @type state :: :stopped | :running
 
   @state_stopped :stopped
@@ -32,7 +32,7 @@ defmodule PomTeams.PomTimer do
   @doc """
   Start a new timer
   """
-  @spec start_link(Settings.t) :: :gen_statem.start_ret
+  @spec start_link(Settings.t()) :: :gen_statem.start_ret()
   def start_link(settings) do
     GenStateMachine.start_link(PomTeams.PomTimer, settings)
   end
@@ -99,7 +99,7 @@ defmodule PomTeams.PomTimer do
   def handle_event(:cast, @action_start, @state_stopped, data) do
     {:next_state, @state_running, start_round_timer(data)}
   end
-  
+
   # @doc """
   # Handle pause action
   # """
@@ -168,12 +168,10 @@ defmodule PomTeams.PomTimer do
   Catch-all handler
   """
   def handle_event(action_type, event_content, state, data) do
-    #TODO: craches the timer so it should be avoided
+    # TODO: craches the timer so it should be avoided
     IO.puts("Catching the unknown event")
     super(action_type, event_content, state, data)
   end
-
-
 
   ## Private functions
   #
@@ -181,7 +179,7 @@ defmodule PomTeams.PomTimer do
   defp start_round_timer(%{settings: settings, seconds_left: nil} = data) do
     # start the round timer
     seconds_left = settings.pomodoro_minutes * 60
-    #TODO: monitor the timer reference?
+    # TODO: monitor the timer reference?
     timer_ref = Process.send_after(self(), :round_finished, seconds_left * 1000)
     %{data | timer_ref: timer_ref, seconds_left: seconds_left}
   end
@@ -190,10 +188,12 @@ defmodule PomTeams.PomTimer do
     # round is not started yet
     0
   end
+
   defp calc_seconds_elapsed(%{settings: settings, seconds_left: seconds_left, timer_ref: nil}) do
     # timer is on pause
     settings.pomodoro_minutes * 60 - seconds_left
   end
+
   defp calc_seconds_elapsed(%{settings: settings, seconds_left: seconds_left, timer_ref: timer}) do
     # timer is running
     case Process.read_timer(timer) do
@@ -215,5 +215,4 @@ defmodule PomTeams.PomTimer do
   # defp reset_rounds(data) do
   #   %{data | rounds_finished: 0}
   # end
-
 end

@@ -5,7 +5,6 @@ defmodule PomTeams.Schema.Settings do
   use Ecto.Schema
 
   schema "settings" do
-
     belongs_to :user, PomTeams.Schema.User
 
     # time interval for the pomodoro
@@ -13,7 +12,7 @@ defmodule PomTeams.Schema.Settings do
 
     # time interval for a short break
     field :short_break_minutes, :integer
- 
+
     # time interval for a long break
     field :long_break_minutes, :integer
 
