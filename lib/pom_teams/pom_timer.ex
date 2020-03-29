@@ -100,13 +100,17 @@ defmodule PomTeams.PomTimer do
     {:next_state, @state_running, start_round_timer(data)}
   end
 
-  # @doc """
-  # Handle pause action
-  # """
-  # def handle_event(:cast, @action_pause, @state_running, data) do
-  #   {:next_state, @state_stopped, remove_round_timer(data)}
-  # end
-  # 
+  @doc """
+  Handle pause action
+  """
+  def handle_event(:cast, @action_pause, @state_stopped, data) do
+    {:next_state, @state_stopped, data}
+  end
+
+  def handle_event(:cast, @action_pause, @state_running, data) do
+    {:next_state, @state_stopped, remove_round_timer(data)}
+  end
+
   # @doc """
   # Handle reset action
   # """
@@ -177,11 +181,18 @@ defmodule PomTeams.PomTimer do
   #
 
   defp start_round_timer(%{settings: settings, seconds_left: nil} = data) do
-    # start the round timer
+    # start the new round timer
     seconds_left = settings.pomodoro_minutes * 60
     # TODO: monitor the timer reference?
     timer_ref = Process.send_after(self(), :round_finished, seconds_left * 1000)
     %{data | timer_ref: timer_ref, seconds_left: seconds_left}
+  end
+
+  defp start_round_timer(%{seconds_left: seconds_left} = data) do
+    # restart the existing round timer
+    # TODO: monitor the timer reference?
+    timer_ref = Process.send_after(self(), :round_finished, seconds_left * 1000)
+    %{data | timer_ref: timer_ref}
   end
 
   defp calc_seconds_elapsed(%{seconds_left: nil}) do
@@ -202,16 +213,18 @@ defmodule PomTeams.PomTimer do
     end
   end
 
-  # 
-  # defp remove_round_timer(%{settings: settings, timer_ref: timer_ref } = data) do
-  #   # stop the timer
-  #   :timer.cancel(timer_ref)
-  #   # TODO: save the time elapsed in the round
-  #   # remove timer_ref
-  #   updated_data = %{data | timer_ref: nil}
-  #   updated_data
-  # end
-  # 
+  defp remove_round_timer(%{timer_ref: nil} = data), do: data
+
+  defp remove_round_timer(%{seconds_left: seconds_left, timer_ref: timer_ref} = data) do
+    seconds_left =
+      case Process.cancel_timer(timer_ref) do
+        false -> seconds_left
+        milliseconds -> div(milliseconds, 1000)
+      end
+
+    %{data | timer_ref: nil, seconds_left: seconds_left}
+  end
+
   # defp reset_rounds(data) do
   #   %{data | rounds_finished: 0}
   # end
