@@ -16,11 +16,12 @@ defmodule PomTeams.PomTimerTest do
     {:ok, timer} = PomTimer.start_link(build_settings())
 
     PomTimer.pause(timer)
+
+    assert :stopped == PomTimer.get_state(timer)
     prev_seconds_elapsed = PomTimer.get_seconds_elapsed(timer)
 
     Process.sleep(1500)
 
-    assert :stopped == PomTimer.get_state(timer)
     assert PomTimer.get_seconds_elapsed(timer) == prev_seconds_elapsed
   end
 
@@ -35,6 +36,37 @@ defmodule PomTeams.PomTimerTest do
     Process.sleep(1500)
 
     assert PomTimer.get_seconds_elapsed(timer) > prev_seconds_elapsed
+  end
+
+  describe "reset action" do
+    test "resets the paused timer to initial state" do
+      {:ok, timer} = PomTimer.start_link(build_settings())
+      Process.sleep(1500)
+      PomTimer.pause(timer)
+
+      PomTimer.reset(timer)
+
+      assert PomTimer.get_seconds_elapsed(timer) == 0
+      assert PomTimer.get_state(timer) == :stopped
+
+      # TODO: check rounds count was reset 
+      # by manually sending :round_finished events
+    end
+
+    test "restarts the running timer" do
+      {:ok, timer} = PomTimer.start_link(build_settings())
+      Process.sleep(2500)
+
+      prev_seconds_elapsed = PomTimer.get_seconds_elapsed(timer)
+
+      PomTimer.reset(timer)
+
+      assert PomTimer.get_seconds_elapsed(timer) < prev_seconds_elapsed
+      assert PomTimer.get_state(timer) == :running
+
+      # TODO: check rounds count was reset 
+      # by manually sending :round_finished events
+    end
   end
 
   defp build_settings() do

@@ -96,6 +96,10 @@ defmodule PomTeams.PomTimer do
   @doc """
   Handle start action
   """
+  def handle_event(:cast, @action_start, @state_running, data) do
+    {:next_state, @state_running, data}
+  end
+
   def handle_event(:cast, @action_start, @state_stopped, data) do
     {:next_state, @state_running, start_round_timer(data)}
   end
@@ -111,24 +115,29 @@ defmodule PomTeams.PomTimer do
     {:next_state, @state_stopped, remove_round_timer(data)}
   end
 
-  # @doc """
-  # Handle reset action
-  # """
-  # def handle_event(:cast, @action_reset, @state_stopped, data) do
-  #   updated_data = data
-  #     |> reset_rounds()
-  # 
-  #   {:next_state, @state_stopped, updated_data}
-  # end
-  # def handle_event(:cast, @action_reset, @state_running, data) do
-  #   updated_data = data
-  #     |> remove_round_timer()
-  #     |> reset_rounds()
-  #     |> start_round_timer()
-  # 
-  #   {:next_state, @state_running, updated_data}
-  # end
-  # 
+  @doc """
+  Handle reset action
+  """
+  def handle_event(:cast, @action_reset, @state_stopped, data) do
+    updated_data =
+      data
+      |> reset_round()
+      |> reset_rounds()
+
+    {:next_state, @state_stopped, updated_data}
+  end
+
+  def handle_event(:cast, @action_reset, @state_running, data) do
+    updated_data =
+      data
+      |> remove_round_timer()
+      |> reset_round()
+      |> reset_rounds()
+      |> start_round_timer()
+
+    {:next_state, @state_running, updated_data}
+  end
+
   # @doc """
   # Handle stop action
   # """
@@ -223,6 +232,14 @@ defmodule PomTeams.PomTimer do
       end
 
     %{data | timer_ref: nil, seconds_left: seconds_left}
+  end
+
+  defp reset_round(data) do
+    %{data | seconds_left: nil}
+  end
+
+  defp reset_rounds(data) do
+    %{data | rounds_finished: 0}
   end
 
   # defp reset_rounds(data) do
