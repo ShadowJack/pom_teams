@@ -1,5 +1,7 @@
 # PomTeams
 
+![Elixir CI](https://github.com/ShadowJack/pom_teams/workflows/Elixir%20CI/badge.svg)
+
 An application for Microsoft Teams that facilitates the use of [Pomodoro technique](https://en.wikipedia.org/wiki/Pomodoro_Technique)
 
 ## Features
