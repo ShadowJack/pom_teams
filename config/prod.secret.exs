@@ -30,6 +30,12 @@ config :pom_teams, PomTeamsWeb.Endpoint,
   ],
   secret_key_base: secret_key_base
 
+
+# Configure MicrosoftBot service
+config :ex_microsoftbot,
+    app_id: System.get_env("BOT_APP_ID") || railse "environment variable BOT_APP_ID is missing",
+    app_password: System.get_env("BOT_APP_PASSWORD") || railse "environment variable BOT_APP_PASSWORD is missing"
+
 # ## Using releases (Elixir v1.9+)
 #
 # If you are doing OTP releases, you need to instruct Phoenix

@@ -1,0 +1,78 @@
+{
+    "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.5/MicrosoftTeams.schema.json",
+    "manifestVersion": "1.5",
+    "version": "1.0.0",
+    "id": "69d8e50f-3e0d-4725-9966-1d91d2a2fa55",
+    "packageName": "shadowjack.pom_bot",
+    "developer": {
+        "name": "Konstantin Pavlovsky",
+        "websiteUrl": "https://github.com/ShadowJack",
+        "privacyUrl": "https://github.com/ShadowJack",
+        "termsOfUseUrl": "https://github.com/ShadowJack"
+    },
+    "icons": {
+        "color": "color.png",
+        "outline": "outline.png"
+    },
+    "name": {
+        "short": "PomBot",
+        "full": "Pomodoro bot"
+    },
+    "description": {
+        "short": "An app that facilitates the use of Pomodoro technique",
+        "full": "A bot that accepts a set of commands to manage a pomodoro timer."
+    },
+    "accentColor": "#FAEDED",
+    "staticTabs": [
+        {
+            "entityId": "settingsTab",
+            "name": "Settings",
+            "contentUrl": "https://test.com/settings",
+            "scopes": [
+                "personal"
+            ]
+        }
+    ],
+    "bots": [
+        {
+            "botId": "69d8e50f-3e0d-4725-9966-1d91d2a2fa55",
+            "scopes": [
+                "personal"
+            ],
+            "commandLists": [
+                {
+                    "scopes": [
+                        "personal"
+                    ],
+                    "commands": [
+                        {
+                            "title": "pomstart",
+                            "description": "Start a pomodoro timer"
+                        },
+                        {
+                            "title": "pompause",
+                            "description": "Pause the current pomodoro timer"
+                        },
+                        {
+                            "title": "pomreset",
+                            "description": "Reset the pomodoro timer (resets the timer and the tracking of short intervals)"
+                        },
+                        {
+                            "title": "pomstop",
+                            "description": "stop the pomodoro (pause and reset)"
+                        }
+                    ]
+                }
+            ],
+            "supportsFiles": false,
+            "isNotificationOnly": true
+        }
+    ],
+    "permissions": [
+        "identity",
+        "messageTeamMembers"
+    ],
+    "validDomains": [
+        "test.com"
+    ]
+}

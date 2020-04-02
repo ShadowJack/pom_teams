@@ -21,7 +21,7 @@ defmodule PomTeams.MixProject do
     [
       mod: {PomTeams.Application, []},
       extra_applications: [:logger, :runtime_tools],
-      applications: [:gen_state_machine]
+      applications: [:gen_state_machine, :ex_microsoftbot]
     ]
   end
 
@@ -41,7 +41,8 @@ defmodule PomTeams.MixProject do
       {:postgrex, ">= 0.0.0"},
       {:jason, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
-      {:gen_state_machine, "~> 2.0"}
+      {:gen_state_machine, "~> 2.0"},
+      {:ex_microsoftbot, "~> 2.0.2"}
     ]
   end
 
