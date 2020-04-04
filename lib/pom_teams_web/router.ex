@@ -7,5 +7,7 @@ defmodule PomTeamsWeb.Router do
 
   scope "/api", PomTeamsWeb do
     pipe_through :api
+
+    post "/activity", ActivityController, :new
   end
 end
