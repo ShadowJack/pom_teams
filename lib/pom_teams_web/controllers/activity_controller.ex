@@ -1,4 +1,4 @@
-defmodule PomTeams.ActivityController do
+defmodule PomTeamsWeb.ActivityController do
   @moduledoc """
   Controller for handling conversations with MS Teams
   """

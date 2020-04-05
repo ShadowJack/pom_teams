@@ -30,7 +30,9 @@ config :phoenix, :json_library, Jason
 # Configure MicrosoftBot service
 config :ex_microsoftbot,
     app_id: "",
-    app_password: ""
+    app_password: "",
+    using_bot_emulator: true
+
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
