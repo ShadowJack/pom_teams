@@ -65,7 +65,7 @@
                 }
             ],
             "supportsFiles": false,
-            "isNotificationOnly": true
+            "isNotificationOnly": false
         }
     ],
     "permissions": [
