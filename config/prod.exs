@@ -10,11 +10,17 @@ use Mix.Config
 # which you should run after static files are built and
 # before starting your production server.
 config :pom_teams, PomTeamsWeb.Endpoint,
-  url: [host: "example.com", port: 80],
-  cache_static_manifest: "priv/static/cache_manifest.json"
+  url: [host: "example.com", port: 80]
 
 # Do not print debug messages in production
 config :logger, level: :info
+
+
+# Change the default scope that is used for authentication
+# with the MicrosoftBotFramework
+config :ex_microsoftbot,
+  using_bot_emulator: false,
+  scope: "https://api.botframework.com/.default"
 
 # ## SSL Support
 #
