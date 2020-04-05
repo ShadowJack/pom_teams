@@ -8,9 +8,8 @@ defmodule PomTeamsWeb.ActivityController do
   require Logger
   
   def new(conn, params) do
-    Logger.info(inspect(params))
 
-    activity = Activity.parse(params)
+    {:ok, activity} = Activity.parse(params)
     Logger.info(inspect(activity))
 
     send_resp(conn, 200, "")
