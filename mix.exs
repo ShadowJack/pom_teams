@@ -20,8 +20,7 @@ defmodule PomTeams.MixProject do
   def application do
     [
       mod: {PomTeams.Application, []},
-      extra_applications: [:logger, :runtime_tools],
-      applications: [:gen_state_machine, :ex_microsoftbot]
+      extra_applications: [:logger, :runtime_tools]
     ]
   end
 
