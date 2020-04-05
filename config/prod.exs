@@ -19,8 +19,7 @@ config :logger, level: :info
 # Change the default scope that is used for authentication
 # with the MicrosoftBotFramework
 config :ex_microsoftbot,
-  using_bot_emulator: false,
-  scope: "https://api.botframework.com/.default"
+  using_bot_emulator: false
 
 # ## SSL Support
 #
