@@ -2,10 +2,10 @@ defmodule PomTeams.PomTimerTest do
   use ExUnit.Case, async: true
 
   alias PomTeams.PomTimer
-  alias PomTeams.Schema.Settings
+  alias PomTeams.UserContext.User
 
   test "state machine is running after creation" do
-    assert {:ok, timer} = PomTimer.start_link(build_settings())
+    timer = start_timer_link()
     assert {:ok, :running} == PomTimer.get_state(timer)
 
     Process.sleep(1500)
@@ -14,7 +14,7 @@ defmodule PomTeams.PomTimerTest do
   end
 
   test "pause action pauses the timer" do
-    {:ok, timer} = PomTimer.start_link(build_settings())
+    timer = start_timer_link()
 
     PomTimer.pause(timer)
 
@@ -28,7 +28,7 @@ defmodule PomTeams.PomTimerTest do
   end
 
   test "start action unpauses the timer" do
-    {:ok, timer} = PomTimer.start_link(build_settings())
+    timer = start_timer_link()
     Process.sleep(1500)
     PomTimer.pause(timer)
     {:ok, prev_seconds_elapsed} = PomTimer.get_seconds_elapsed(timer)
@@ -43,7 +43,7 @@ defmodule PomTeams.PomTimerTest do
 
   describe "reset action" do
     test "resets the paused timer to initial state" do
-      {:ok, timer} = PomTimer.start_link(build_settings())
+      timer = start_timer_link()
       Process.sleep(1500)
       PomTimer.pause(timer)
 
@@ -57,7 +57,7 @@ defmodule PomTeams.PomTimerTest do
     end
 
     test "restarts the running timer" do
-      {:ok, timer} = PomTimer.start_link(build_settings())
+      timer = start_timer_link()
       Process.sleep(2500)
 
       {:ok, prev_seconds_elapsed} = PomTimer.get_seconds_elapsed(timer)
@@ -74,7 +74,7 @@ defmodule PomTeams.PomTimerTest do
   end
 
   test "stop action pauses and resets everything" do
-    {:ok, timer} = PomTimer.start_link(build_settings())
+    timer = start_timer_link()
     Process.sleep(1500)
 
     PomTimer.stop(timer)
@@ -88,7 +88,7 @@ defmodule PomTeams.PomTimerTest do
 
   describe "when round is finished" do
     test "count of completed rounds is increased" do
-      {:ok, timer} = PomTimer.start_link(build_settings())
+      timer = start_timer_link()
 
       Process.send(timer, :round_finished, [])
 
@@ -96,7 +96,7 @@ defmodule PomTeams.PomTimerTest do
     end
 
     test "a short break is started" do
-      {:ok, timer} = PomTimer.start_link(build_settings())
+      timer = start_timer_link()
 
       Process.send(timer, :round_finished, [])
       Process.sleep(1500)
@@ -107,8 +107,8 @@ defmodule PomTeams.PomTimerTest do
     end
 
     test "a long break is started" do
-      settings = %Settings{ build_settings() | short_break_minutes: 0}
-      {:ok, timer} = PomTimer.start_link(settings)
+      user = %User{build_user() | short_break_minutes: 0}
+      timer = start_timer_link(user)
 
       Process.send(timer, :round_finished, [])
       # skip the short break
@@ -125,9 +125,16 @@ defmodule PomTeams.PomTimerTest do
     end
   end
 
-  defp build_settings() do
-    %Settings{
-      user_id: 1,
+  defp start_timer_link(user \\ build_user()) do
+    assert {:ok, timer} = PomTimer.start_link(user, "xyz")
+    timer
+  end
+
+  defp build_user() do
+    %User{
+      id: "test_user",
+      conversation_id: "conversation123",
+      name: "Test user",
       pomodoro_minutes: 10,
       short_break_minutes: 1,
       long_break_minutes: 2,

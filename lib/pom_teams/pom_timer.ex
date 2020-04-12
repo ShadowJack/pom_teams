@@ -5,10 +5,13 @@ defmodule PomTeams.PomTimer do
   use GenStateMachine
   require Logger
 
-  alias PomTeams.Schema.Settings
+  alias PomTeams.UserContext.User
+  alias ExMicrosoftBot.Client.Conversations, as: ConversationsClient
+  alias ExMicrosoftBot.Models.Activity
 
   @type data :: %{
-          settings: Settings.t(),
+          user: User.t(),
+          bot_id: String.t(),
           rounds_finished: number(),
           # Reference to the current timer 
           # that will ring at the end of the round
@@ -34,9 +37,9 @@ defmodule PomTeams.PomTimer do
   @doc """
   Start a new timer
   """
-  @spec start_link(Settings.t()) :: :gen_statem.start_ret()
-  def start_link(settings) do
-    GenStateMachine.start_link(PomTeams.PomTimer, settings)
+  @spec start_link(User.t(), String.t()) :: :gen_statem.start_ret()
+  def start_link(user, bot_id) do
+    GenStateMachine.start_link(PomTeams.PomTimer, [user, bot_id])
   end
 
   @doc """
@@ -98,8 +101,15 @@ defmodule PomTeams.PomTimer do
   ##
   # Implementation
 
-  def init(settings) do
-    data = %{settings: settings, timer_ref: nil, rounds_finished: 0, seconds_left: nil}
+  def init([user, bot_id]) do
+    data = %{
+      user: user,
+      bot_id: bot_id,
+      timer_ref: nil,
+      rounds_finished: 0,
+      seconds_left: nil
+    }
+
     {:ok, @state_stopped, data, {:next_event, :cast, @action_start}}
   end
 
@@ -200,7 +210,7 @@ defmodule PomTeams.PomTimer do
   @doc """
   Handle finished round event
   """
-  def handle_event(:info, :round_finished, state, data) do
+  def handle_event(:info, :round_finished, _state, %{user: user, bot_id: bot_id} = data) do
     updated_data =
       data
       # remove the current timer if it's present
@@ -212,6 +222,31 @@ defmodule PomTeams.PomTimer do
       # start the break timer
       |> start_break_timer()
 
+    # TODO: extract into a separate module
+    activity = %Activity{
+      type: "message",
+      conversation: %ExMicrosoftBot.Models.ConversationAccount{
+        id: user.conversation_id
+      },
+      recipient: %ExMicrosoftBot.Models.ChannelAccount{
+        id: user.id,
+        name: user.name
+      },
+      from: %ExMicrosoftBot.Models.ChannelAccount{
+        id: bot_id,
+        name: "PomBot"
+      },
+      text: """
+      Hooray, another pomodoro is finished!
+      A well-deserved break for #{calc_seconds_in_break(updated_data)} minutes is starting.
+      """
+    }
+
+    case ConversationsClient.send_to_conversation(user.conversation_id, activity) do
+      :ok -> :ok
+      error -> Logger.error("Error sending message to the user: #{inspect(error)}")
+    end
+
     # set correct state
     {:next_state, @state_on_break, updated_data}
   end
@@ -221,6 +256,7 @@ defmodule PomTeams.PomTimer do
   """
   def handle_event(:info, :break_finished, @state_on_break, data) do
     Logger.debug("Break finished!")
+
     updated_data =
       data
       # remove the current timer if it's present
@@ -247,9 +283,9 @@ defmodule PomTeams.PomTimer do
   ## Private functions
   #
 
-  defp start_round_timer(%{settings: settings, seconds_left: nil} = data) do
+  defp start_round_timer(%{user: user, seconds_left: nil} = data) do
     # start the new round timer
-    seconds_left = settings.pomodoro_minutes * 60
+    seconds_left = user.pomodoro_minutes * 60
     # TODO: monitor the timer reference?
     timer_ref = Process.send_after(self(), :round_finished, seconds_left * 1000)
     %{data | timer_ref: timer_ref, seconds_left: seconds_left}
@@ -278,21 +314,22 @@ defmodule PomTeams.PomTimer do
     0
   end
 
-  defp calc_seconds_elapsed_in_round(%{settings: settings, seconds_left: seconds_left, timer_ref: nil}) do
+  defp calc_seconds_elapsed_in_round(%{user: user, seconds_left: seconds_left, timer_ref: nil}) do
     # timer is on pause
-    settings.pomodoro_minutes * 60 - seconds_left
+    user.pomodoro_minutes * 60 - seconds_left
   end
 
-  defp calc_seconds_elapsed_in_round(%{settings: settings, seconds_left: seconds_left, timer_ref: timer}) do
+  defp calc_seconds_elapsed_in_round(%{user: user, seconds_left: seconds_left, timer_ref: timer}) do
     # timer is running
     case Process.read_timer(timer) do
-      false -> settings.pomodoro_minutes * 60 - seconds_left
-      milliseconds -> settings.pomodoro_minutes * 60 - div(milliseconds, 1000)
+      false -> user.pomodoro_minutes * 60 - seconds_left
+      milliseconds -> user.pomodoro_minutes * 60 - div(milliseconds, 1000)
     end
   end
 
   defp calc_seconds_elapsed_on_break(%{timer_ref: timer} = data) do
     full_break_seconds = calc_seconds_in_break(data)
+
     case Process.read_timer(timer) do
       false -> full_break_seconds
       milliseconds -> full_break_seconds - div(milliseconds, 1000)
@@ -300,12 +337,12 @@ defmodule PomTeams.PomTimer do
   end
 
   defp calc_seconds_in_break(data) do
-    is_long_break = rem(data.rounds_finished, data.settings.short_breaks_limit + 1) == 0
+    is_long_break = rem(data.rounds_finished, data.user.short_breaks_limit + 1) == 0
 
     if is_long_break do
-      data.settings.long_break_minutes * 60 
-    else 
-      data.settings.short_break_minutes * 60
+      data.user.long_break_minutes * 60
+    else
+      data.user.short_break_minutes * 60
     end
   end
 

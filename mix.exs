@@ -41,7 +41,7 @@ defmodule PomTeams.MixProject do
       {:jason, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
       {:gen_state_machine, "~> 2.0"},
-      {:ex_microsoftbot, github: "zabirauf/ex_microsoftbot", branch: "master"}
+      {:ex_microsoftbot, "~> 2.0.2"}
     ]
   end
 

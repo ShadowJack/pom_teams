@@ -2,8 +2,8 @@ import Config
 
 # Configure MicrosoftBot service
 config :ex_microsoftbot,
-    app_id: System.fetch_env!("BOT_APP_ID"),
-    app_password: System.fetch_env!("BOT_APP_PASSWORD")
+  app_id: System.fetch_env!("BOT_APP_ID"),
+  app_password: System.fetch_env!("BOT_APP_PASSWORD")
 
 secret_key_base =
   System.get_env("SECRET_KEY_BASE") ||
