@@ -9,6 +9,7 @@ defmodule PomTeamsWeb.ActivityController do
   require Logger
 
   def new(conn, params) do
+    Logger.info(inspect(params))
     {:ok, activity} = Activity.parse(params)
 
     case InputHandler.handle_activity(activity) do

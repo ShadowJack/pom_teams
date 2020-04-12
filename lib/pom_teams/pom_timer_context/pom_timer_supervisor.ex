@@ -30,11 +30,11 @@ defmodule PomTeams.PomTimerContext.PomTimerSupervisor do
   Try to get a pomodoro timer.
   If it doesn't exist, then `nil` is returned.
   """
-  @spec get_pom_timer(String.t()) :: {:ok, pid()} | nil
+  @spec get_pom_timer(String.t()) :: pid() | nil
   def get_pom_timer(external_user_id) do
     case Registry.lookup(PomTeams.PomTimerContext.PomTimersRegistry, external_user_id) do
       [] -> nil
-      [{pid, _}] -> {:ok, pid}
+      [{pid, _}] -> pid
     end
   end
 
