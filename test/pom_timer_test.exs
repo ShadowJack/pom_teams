@@ -1,7 +1,7 @@
 defmodule PomTeams.PomTimerTest do
   use ExUnit.Case, async: true
 
-  alias PomTeams.PomTimer
+  alias PomTeams.PomTimerContext.{PomTimer, PomTimerSupervisor}
   alias PomTeams.UserContext.User
 
   test "state machine is running after creation" do
@@ -126,7 +126,7 @@ defmodule PomTeams.PomTimerTest do
   end
 
   defp start_timer_link(user \\ build_user()) do
-    assert {:ok, timer} = PomTimer.start_link(user, "xyz")
+    assert {:ok, timer} = PomTimer.start_link({user, "xyz"})
     timer
   end
 

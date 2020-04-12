@@ -11,13 +11,13 @@ defmodule PomTeams.Application do
       # Start the Ecto repository
       PomTeams.Repo,
       # Start the endpoint when the application starts
-      PomTeamsWeb.Endpoint
-      # Starts a worker by calling: PomTeams.Worker.start_link(arg)
-      # {PomTeams.Worker, arg},
+      PomTeamsWeb.Endpoint,
+      # Start a supervisor for pomodoro timers management
+      PomTeams.PomTimerContext.PomTimerSupervisor,
+      # A registry for pomodoro timers
+      {Registry, [keys: :unique, name: PomTeams.PomTimerContext.PomTimersRegistry]}
     ]
 
-    # See https://hexdocs.pm/elixir/Supervisor.html
-    # for other strategies and supported options
     opts = [strategy: :one_for_one, name: PomTeams.Supervisor]
     Supervisor.start_link(children, opts)
   end

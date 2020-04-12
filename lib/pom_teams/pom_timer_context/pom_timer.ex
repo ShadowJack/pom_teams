@@ -1,4 +1,4 @@
-defmodule PomTeams.PomTimer do
+defmodule PomTeams.PomTimerContext.PomTimer do
   @moduledoc """
   A pomodoro timer state machine
   """
@@ -37,9 +37,10 @@ defmodule PomTeams.PomTimer do
   @doc """
   Start a new timer
   """
-  @spec start_link(User.t(), String.t()) :: :gen_statem.start_ret()
-  def start_link(user, bot_id) do
-    GenStateMachine.start_link(PomTeams.PomTimer, [user, bot_id])
+  @spec start_link(any()) :: :gen_statem.start_ret()
+  def start_link({user, _} = args) do
+    name = {:via, Registry, {PomTeams.PomTimerContext.PomTimersRegistry, user.external_id}}
+    GenStateMachine.start_link(__MODULE__, args, name: name)
   end
 
   @doc """
@@ -101,7 +102,7 @@ defmodule PomTeams.PomTimer do
   ##
   # Implementation
 
-  def init([user, bot_id]) do
+  def init({user, bot_id}) do
     data = %{
       user: user,
       bot_id: bot_id,
@@ -117,6 +118,7 @@ defmodule PomTeams.PomTimer do
   Handle start action
   """
   def handle_event(:cast, @action_start, @state_running, data) do
+    Logger.info("Handle start action for #{data.user.external_id}")
     {:next_state, @state_running, data}
   end
 

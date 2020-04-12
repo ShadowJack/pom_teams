@@ -4,24 +4,17 @@ defmodule PomTeamsWeb.ActivityController do
   """
   use PomTeamsWeb, :controller
   alias ExMicrosoftBot.Models.Activity
+  alias PomTeams.InputHandler
 
   require Logger
 
   def new(conn, params) do
     {:ok, activity} = Activity.parse(params)
 
-    user =
-      PomTeams.UserContext.get_or_create!(
-        activity.from.id,
-        activity.from.name,
-        activity.conversation.id
-      )
-
-    #TODO: parse command and pass it to correct timer
-
-    # start a timer
-    bot_id = activity.recipient.id
-    PomTeams.PomTimer.start_link(user, bot_id)
-    send_resp(conn, 200, "")
+    case InputHandler.handle_activity(activity) do
+      :ok -> send_resp(conn, 200, "")
+      {:client_error, msg} -> send_resp(conn, 400, msg)
+      {:server_error, msg} -> send_resp(conn, 500, msg)
+    end
   end
 end
