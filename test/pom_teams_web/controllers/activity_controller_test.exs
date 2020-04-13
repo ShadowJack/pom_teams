@@ -3,18 +3,92 @@ defmodule PomTeams.ActivityControllerTest do
 
   alias PomTeams.PomTimerContext.{PomTimer, PomTimerSupervisor}
 
-  test "start action is processed", %{conn: conn} do
-    params = build_params("pomstart")
-    conn = post(conn, "api/activity", params)
+  describe "start action" do
+    test "is processed successfully", %{conn: conn} do
+      params = build_params("pomstart")
+      conn = post(conn, "api/activity", params)
 
-    assert conn.status == 200
+      assert conn.status == 200
 
-    timer = PomTimerSupervisor.get_pom_timer(params["from"]["id"])
-    assert timer != nil
-    assert {:ok, :running} == PomTimer.get_state(timer) 
+      timer = PomTimerSupervisor.get_pom_timer(params["from"]["id"])
+      assert timer != nil
+      assert {:ok, :running} == PomTimer.get_state(timer)
+    end
   end
 
-  defp build_params(text) do
+  describe "pause action" do
+    test "returns error when no timer is running", %{conn: conn} do
+      params = build_params("pompause")
+      conn = post(conn, "api/activity", params)
+
+      assert response(conn, 400) =~ "No pomodoro timer is running"
+    end
+
+    test "is processed successfully", %{conn: conn} do
+      params = build_params("pomstart")
+      user_external_id = params["from"]["id"]
+      conn = post(conn, "api/activity", params)
+
+      params = build_params("pompause", user_external_id)
+      conn = post(conn, "api/activity", params)
+
+      assert conn.status == 200
+
+      timer = PomTimerSupervisor.get_pom_timer(user_external_id)
+      assert timer != nil
+      assert {:ok, :stopped} == PomTimer.get_state(timer)
+    end
+  end
+
+  describe "reset action" do
+    test "returns error when no timer is running", %{conn: conn} do
+      params = build_params("pomreset")
+      conn = post(conn, "api/activity", params)
+
+      assert response(conn, 400) =~ "No pomodoro timer is running"
+    end
+
+    test "is processed successfully", %{conn: conn} do
+      params = build_params("pomstart")
+      user_external_id = params["from"]["id"]
+      conn = post(conn, "api/activity", params)
+
+      params = build_params("pomreset", user_external_id)
+      conn = post(conn, "api/activity", params)
+
+      assert conn.status == 200
+
+      timer = PomTimerSupervisor.get_pom_timer(user_external_id)
+      assert timer != nil
+      assert {:ok, :running} == PomTimer.get_state(timer)
+    end
+  end
+
+  describe "stop action" do
+    test "returns error when no timer is running", %{conn: conn} do
+      params = build_params("pomreset")
+      conn = post(conn, "api/activity", params)
+
+      assert response(conn, 400) =~ "No pomodoro timer is running"
+    end
+
+    test "is processed successfully", %{conn: conn} do
+      params = build_params("pomstart")
+      user_external_id = params["from"]["id"]
+      conn = post(conn, "api/activity", params)
+
+      params = build_params("pomstop", user_external_id)
+      conn = post(conn, "api/activity", params)
+
+      assert conn.status == 200
+
+      timer = PomTimerSupervisor.get_pom_timer(user_external_id)
+      assert timer != nil
+      assert {:ok, :stopped} == PomTimer.get_state(timer)
+    end
+  end
+
+  defp build_params(text, user_external_id \\ "test_#{Ecto.UUID.generate()}") do
     %{
       "channelData" => %{"tenant" => %{"id" => "088cc143-85a1-4c43-9030-fa899b92b0e9"}},
       "channelId" => "msteams",
@@ -29,8 +103,7 @@ defmodule PomTeams.ActivityControllerTest do
       ],
       "from" => %{
         "aadObjectId" => "28c7de74-f24d-47df-a6b2-d12c8f121703",
-        "id" =>
-          "29:1xMODLDvlXBormPE5QQm9zTKI0XMbl9uihQMaJSbMQyIO_3YloFwUUlE3vi6fPt8XSjO6mE1zNQacvawCsTuuaw",
+        "id" => user_external_id,
         "name" => "Konstantin Pavlovsky"
       },
       "id" => "1586724433762",

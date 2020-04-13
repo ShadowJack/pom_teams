@@ -8,13 +8,15 @@ defmodule PomTeams.InputHandler do
   alias PomTeams.UserContext,
         alias(PomTeams.PomTimerContext.{PomTimer, PomTimerSupervisor})
 
-  @doc """
-  Handle activity
-  """
-  @spec handle_activity(Activity.t()) ::
+  @type response ::
           :ok
           | {:client_error, String.t()}
           | {:server_error, String.t()}
+
+  @doc """
+  Handle activity
+  """
+  @spec handle_activity(Activity.t()) :: InputHandler.response()
   def handle_activity(activity) do
     case parse_command(activity.text) do
       {:ok, cmd} -> handle_command(cmd, activity)
@@ -38,33 +40,42 @@ defmodule PomTeams.InputHandler do
     end
   end
 
-  @spec handle_command(atom(), Activity.t()) ::
-          :ok
-          | {:client_error, String.t()}
-          | {:server_error, String.t()}
+  @spec handle_command(atom(), Activity.t()) :: InputHandler.response()
   defp handle_command(:start, activity) do
-    # get pomodoro timer
+    handle_command(:pause, activity, fn _ ->
+      user =
+        UserContext.get_or_create!(
+          activity.from.id,
+          activity.from.name,
+          activity.conversation.id
+        )
+
+      # start a timer
+      bot_id = activity.recipient.id
+      PomTimerSupervisor.create_pom_timer(user, bot_id)
+
+      :ok
+    end)
+  end
+
+  defp handle_command(command, activity) do
+    handle_command(command, activity, fn _ ->
+      {:client_error,
+       "No pomodoro timer is running. You can start a new one with 'pomstart' command."}
+    end)
+  end
+
+  @spec handle_command(atom(), Activity.t(), (Activity.t() -> InputHandler.response())) ::
+          InputHandler.response()
+  defp handle_command(command, activity, on_timer_not_found) do
     user_external_id = activity.from.id
 
     case PomTimerSupervisor.get_pom_timer(user_external_id) do
       nil ->
-        user =
-          UserContext.get_or_create!(
-            activity.from.id,
-            activity.from.name,
-            activity.conversation.id
-          )
-
-        # start a timer
-        bot_id = activity.recipient.id
-        PomTimerSupervisor.create_pom_timer(user, bot_id)
-        :ok
+        on_timer_not_found.(activity)
 
       pid ->
-        PomTimer.start(pid)
+        apply(PomTimer, command, [pid])
     end
   end
-
-  # TODO: implement
-  defp handle_command(_, _), do: :ok
 end
