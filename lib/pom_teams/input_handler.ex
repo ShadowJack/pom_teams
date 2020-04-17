@@ -3,13 +3,14 @@ defmodule PomTeams.InputHandler do
   Functionality for handling incoming messages from user
   """
 
-  alias ExMicrosoftBot.Models.Activity
+  require Logger
 
-  alias PomTeams.UserContext,
-        alias(PomTeams.PomTimerContext.{PomTimer, PomTimerSupervisor})
+  alias ExMicrosoftBot.Models.Activity
+  alias PomTeams.UserContext
+  alias PomTeams.PomTimerContext.{PomTimer, PomTimerSupervisor}
 
   @type response ::
-          :ok
+          {:ok, String.t()}
           | {:client_error, String.t()}
           | {:server_error, String.t()}
 
@@ -42,7 +43,7 @@ defmodule PomTeams.InputHandler do
 
   @spec handle_command(atom(), Activity.t()) :: InputHandler.response()
   defp handle_command(:start, activity) do
-    handle_command(:pause, activity, fn _ ->
+    handle_command(:start, activity, fn _ ->
       user =
         UserContext.get_or_create!(
           activity.from.id,
@@ -52,9 +53,9 @@ defmodule PomTeams.InputHandler do
 
       # start a timer
       bot_id = activity.recipient.id
-      PomTimerSupervisor.create_pom_timer(user, bot_id)
+      {:ok, pid} = PomTimerSupervisor.create_pom_timer(user, bot_id, activity.serviceUrl)
 
-      :ok
+      PomTimer.start(pid)
     end)
   end
 
@@ -75,7 +76,9 @@ defmodule PomTeams.InputHandler do
         on_timer_not_found.(activity)
 
       pid ->
-        apply(PomTimer, command, [pid])
+        res = apply(PomTimer, command, [pid])
+        Logger.info("Result of a timer command processing: #{inspect(res)}")
+        res
     end
   end
 end

@@ -1,10 +1,10 @@
 defmodule PomTeams.PomTimerTest do
   use ExUnit.Case, async: true
 
-  alias PomTeams.PomTimerContext.{PomTimer, PomTimerSupervisor}
+  alias PomTeams.PomTimerContext.PomTimer
   alias PomTeams.UserContext.User
 
-  test "state machine is running after creation" do
+  test "start action starts the timer:)" do
     timer = start_timer_link()
     assert {:ok, :running} == PomTimer.get_state(timer)
 
@@ -16,7 +16,7 @@ defmodule PomTeams.PomTimerTest do
   test "pause action pauses the timer" do
     timer = start_timer_link()
 
-    PomTimer.pause(timer)
+    assert {:ok, _msg} = PomTimer.pause(timer)
 
     assert {:ok, :stopped} == PomTimer.get_state(timer)
     {:ok, prev_seconds_elapsed} = PomTimer.get_seconds_elapsed(timer)
@@ -30,11 +30,11 @@ defmodule PomTeams.PomTimerTest do
   test "start action unpauses the timer" do
     timer = start_timer_link()
     Process.sleep(1500)
-    PomTimer.pause(timer)
+    assert {:ok, _msg} = PomTimer.pause(timer)
     {:ok, prev_seconds_elapsed} = PomTimer.get_seconds_elapsed(timer)
 
     # unpause
-    PomTimer.start(timer)
+    assert {:ok, _msg} = PomTimer.start(timer)
     Process.sleep(1500)
 
     {:ok, seconds_elapsed} = PomTimer.get_seconds_elapsed(timer)
@@ -45,9 +45,9 @@ defmodule PomTeams.PomTimerTest do
     test "resets the paused timer to initial state" do
       timer = start_timer_link()
       Process.sleep(1500)
-      PomTimer.pause(timer)
+      assert {:ok, _msg} = PomTimer.pause(timer)
 
-      PomTimer.reset(timer)
+      assert {:ok, _msg} = PomTimer.reset(timer)
 
       assert {:ok, 0} = PomTimer.get_seconds_elapsed(timer)
       assert {:ok, :stopped} = PomTimer.get_state(timer)
@@ -62,7 +62,7 @@ defmodule PomTeams.PomTimerTest do
 
       {:ok, prev_seconds_elapsed} = PomTimer.get_seconds_elapsed(timer)
 
-      PomTimer.reset(timer)
+      assert {:ok, _msg} = PomTimer.reset(timer)
 
       {:ok, seconds_elapsed} = PomTimer.get_seconds_elapsed(timer)
       assert seconds_elapsed < prev_seconds_elapsed
@@ -77,7 +77,7 @@ defmodule PomTeams.PomTimerTest do
     timer = start_timer_link()
     Process.sleep(1500)
 
-    PomTimer.stop(timer)
+    assert {:ok, _msg} = PomTimer.stop(timer)
 
     assert {:ok, 0} = PomTimer.get_seconds_elapsed(timer)
     assert {:ok, :stopped} = PomTimer.get_state(timer)
@@ -101,7 +101,7 @@ defmodule PomTeams.PomTimerTest do
       Process.send(timer, :round_finished, [])
       Process.sleep(1500)
 
-      assert {:ok, :on_break} = PomTimer.get_state(timer)
+      assert {:ok, :on_break} == PomTimer.get_state(timer)
       assert {:ok, seconds} = PomTimer.get_seconds_elapsed(timer)
       assert seconds > 0
     end
@@ -113,20 +113,21 @@ defmodule PomTeams.PomTimerTest do
       Process.send(timer, :round_finished, [])
       # skip the short break
       Process.sleep(1500)
-      assert {:ok, :running} = PomTimer.get_state(timer)
+      assert {:ok, :running} == PomTimer.get_state(timer)
 
       Process.send(timer, :round_finished, [])
       Process.sleep(1500)
 
       # check that long break is active
-      assert {:ok, :on_break} = PomTimer.get_state(timer)
+      assert {:ok, :on_break} == PomTimer.get_state(timer)
       assert {:ok, seconds} = PomTimer.get_seconds_elapsed(timer)
       assert seconds > 0
     end
   end
 
   defp start_timer_link(user \\ build_user()) do
-    assert {:ok, timer} = PomTimer.start_link({user, "xyz"})
+    assert {:ok, timer} = PomTimer.start_link({user, "xyz", "http://serviceurl.com"})
+    assert {:ok, _msg} = PomTimer.start(timer)
     timer
   end
 

@@ -12,6 +12,7 @@ defmodule PomTeams.PomTimerContext.PomTimer do
   @type data :: %{
           user: User.t(),
           bot_id: String.t(),
+          service_url: String.t(),
           rounds_finished: number(),
           # Reference to the current timer 
           # that will ring at the end of the round
@@ -38,7 +39,7 @@ defmodule PomTeams.PomTimerContext.PomTimer do
   Start a new timer
   """
   @spec start_link(any()) :: :gen_statem.start_ret()
-  def start_link({user, _} = args) do
+  def start_link({user, _, _} = args) do
     name = {:via, Registry, {PomTeams.PomTimerContext.PomTimersRegistry, user.external_id}}
     GenStateMachine.start_link(__MODULE__, args, name: name)
   end
@@ -46,33 +47,33 @@ defmodule PomTeams.PomTimerContext.PomTimer do
   @doc """
   Start the timer
   """
-  @spec start(:gen_statem.server_ref()) :: :ok
+  @spec start(:gen_statem.server_ref()) :: {:ok, String.t()}
   def start(pid) do
-    GenStateMachine.cast(pid, @action_start)
+    GenStateMachine.call(pid, @action_start)
   end
 
   @doc """
   Pause the timer
   """
-  @spec pause(:gen_statem.server_ref()) :: :ok
+  @spec pause(:gen_statem.server_ref()) :: {:ok, String.t()}
   def pause(pid) do
-    GenStateMachine.cast(pid, @action_pause)
+    GenStateMachine.call(pid, @action_pause)
   end
 
   @doc """
   Reset the timer
   """
-  @spec reset(:gen_statem.server_ref()) :: :ok
+  @spec reset(:gen_statem.server_ref()) :: {:ok, String.t()}
   def reset(pid) do
-    GenStateMachine.cast(pid, @action_reset)
+    GenStateMachine.call(pid, @action_reset)
   end
 
   @doc """
   Stop the timer: pause and reset to initial state
   """
-  @spec stop(:gen_statem.server_ref()) :: :ok
+  @spec stop(:gen_statem.server_ref()) :: {:ok, String.t()}
   def stop(pid) do
-    GenStateMachine.cast(pid, @action_stop)
+    GenStateMachine.call(pid, @action_stop)
   end
 
   @doc """
@@ -101,55 +102,69 @@ defmodule PomTeams.PomTimerContext.PomTimer do
 
   ##
   # Implementation
+  #
 
-  def init({user, bot_id}) do
+  def init({user, bot_id, service_url}) do
     data = %{
       user: user,
       bot_id: bot_id,
+      service_url: service_url,
       timer_ref: nil,
       rounds_finished: 0,
       seconds_left: nil
     }
 
-    {:ok, @state_stopped, data, {:next_event, :cast, @action_start}}
+    {:ok, @state_stopped, data}
   end
 
   @doc """
   Handle start action
   """
-  def handle_event(:cast, @action_start, @state_running, data) do
-    Logger.info("Handle start action for #{data.user.external_id}")
-    {:next_state, @state_running, data}
+  def handle_event({:call, from}, @action_start, @state_running, data) do
+    elapsed =
+      data
+      |> calc_seconds_elapsed_in_round()
+      |> format_seconds()
+
+    msg = "Your pomodoro timer is already running for #{elapsed}"
+    {:next_state, @state_running, data, [{:reply, from, {:ok, msg}}]}
   end
 
-  def handle_event(:cast, @action_start, @state_stopped, data) do
-    {:next_state, @state_running, start_round_timer(data)}
+  def handle_event({:call, from}, @action_start, @state_stopped, data) do
+    Logger.info("The timer is starting")
+    data = start_round_timer(data)
+    left = format_seconds(data.seconds_left)
+    msg = "Pomodoro round has started. #{left} of work are ahead!"
+    {:next_state, @state_running, data, [{:reply, from, {:ok, msg}}]}
   end
 
   @doc """
   Handle pause action
   """
-  def handle_event(:cast, @action_pause, @state_stopped, data) do
-    {:next_state, @state_stopped, data}
+  def handle_event({:call, from}, @action_pause, @state_stopped, data) do
+    msg = "Your pomodoro timer is already on pause."
+    {:next_state, @state_stopped, data, [{:reply, from, {:ok, msg}}]}
   end
 
-  def handle_event(:cast, @action_pause, @state_running, data) do
-    {:next_state, @state_stopped, remove_internal_timer(data)}
+  def handle_event({:call, from}, @action_pause, @state_running, data) do
+    msg = "Pomodoro timer is paused."
+    {:next_state, @state_stopped, remove_internal_timer(data), [{:reply, from, {:ok, msg}}]}
   end
 
   @doc """
   Handle reset action
   """
-  def handle_event(:cast, @action_reset, @state_stopped, data) do
+  def handle_event({:call, from}, @action_reset, @state_stopped, data) do
     updated_data =
       data
       |> reset_round()
       |> reset_rounds()
 
-    {:next_state, @state_stopped, updated_data}
+    msg = "The timer has been reset."
+    {:next_state, @state_stopped, updated_data, [{:reply, from, {:ok, msg}}]}
   end
 
-  def handle_event(:cast, @action_reset, @state_running, data) do
+  def handle_event({:call, from}, @action_reset, @state_running, data) do
     updated_data =
       data
       |> remove_internal_timer()
@@ -157,29 +172,32 @@ defmodule PomTeams.PomTimerContext.PomTimer do
       |> reset_rounds()
       |> start_round_timer()
 
-    {:next_state, @state_running, updated_data}
+    msg = "The timer has been reset."
+    {:next_state, @state_running, updated_data, [{:reply, from, {:ok, msg}}]}
   end
 
   @doc """
   Handle stop action
   """
-  def handle_event(:cast, @action_stop, @state_running, data) do
+  def handle_event({:call, from}, @action_stop, @state_running, data) do
     updated_data =
       data
       |> remove_internal_timer()
       |> reset_round
       |> reset_rounds()
 
-    {:next_state, @state_stopped, updated_data}
+    msg = "The timer has been stopped."
+    {:next_state, @state_stopped, updated_data, [{:reply, from, {:ok, msg}}]}
   end
 
-  def handle_event(:cast, @action_stop, @state_stopped, data) do
+  def handle_event({:call, from}, @action_stop, @state_stopped, data) do
     updated_data =
       data
       |> reset_round
       |> reset_rounds()
 
-    {:next_state, @state_stopped, updated_data}
+    msg = "The timer has been stopped."
+    {:next_state, @state_stopped, updated_data, [{:reply, from, {:ok, msg}}]}
   end
 
   @doc """
@@ -212,7 +230,7 @@ defmodule PomTeams.PomTimerContext.PomTimer do
   @doc """
   Handle finished round event
   """
-  def handle_event(:info, :round_finished, _state, %{user: user, bot_id: bot_id} = data) do
+  def handle_event(:info, :round_finished, _state, %{user: user, bot_id: bot_id, service_url: service_url} = data) do
     updated_data =
       data
       # remove the current timer if it's present
@@ -227,6 +245,7 @@ defmodule PomTeams.PomTimerContext.PomTimer do
     # TODO: extract into a separate module
     activity = %Activity{
       type: "message",
+      serviceUrl: service_url,
       conversation: %ExMicrosoftBot.Models.ConversationAccount{
         id: user.conversation_id
       },
@@ -285,6 +304,7 @@ defmodule PomTeams.PomTimerContext.PomTimer do
   ## Private functions
   #
 
+  @spec start_round_timer(__MODULE__.data()) :: __MODULE__.data()
   defp start_round_timer(%{user: user, seconds_left: nil} = data) do
     # start the new round timer
     seconds_left = user.pomodoro_minutes * 60
@@ -300,6 +320,7 @@ defmodule PomTeams.PomTimerContext.PomTimer do
     %{data | timer_ref: timer_ref}
   end
 
+  @spec start_break_timer(__MODULE__.data()) :: __MODULE__.data()
   defp start_break_timer(data) do
     # find the type of break to start: short or long
     seconds = calc_seconds_in_break(data)
@@ -311,6 +332,7 @@ defmodule PomTeams.PomTimerContext.PomTimer do
     %{data | timer_ref: timer_ref}
   end
 
+  @spec calc_seconds_elapsed_in_round(__MODULE__.data()) :: number()
   defp calc_seconds_elapsed_in_round(%{seconds_left: nil}) do
     # round is not started yet
     0
@@ -329,6 +351,7 @@ defmodule PomTeams.PomTimerContext.PomTimer do
     end
   end
 
+  @spec calc_seconds_elapsed_on_break(__MODULE__.data()) :: number()
   defp calc_seconds_elapsed_on_break(%{timer_ref: timer} = data) do
     full_break_seconds = calc_seconds_in_break(data)
 
@@ -338,6 +361,7 @@ defmodule PomTeams.PomTimerContext.PomTimer do
     end
   end
 
+  @spec calc_seconds_in_break(__MODULE__.data()) :: number()
   defp calc_seconds_in_break(data) do
     is_long_break = rem(data.rounds_finished, data.user.short_breaks_limit + 1) == 0
 
@@ -348,6 +372,7 @@ defmodule PomTeams.PomTimerContext.PomTimer do
     end
   end
 
+  @spec remove_internal_timer(__MODULE__.data()) :: __MODULE__.data()
   defp remove_internal_timer(%{timer_ref: nil} = data), do: data
 
   defp remove_internal_timer(%{seconds_left: seconds_left, timer_ref: timer_ref} = data) do
@@ -360,11 +385,19 @@ defmodule PomTeams.PomTimerContext.PomTimer do
     %{data | timer_ref: nil, seconds_left: seconds_left}
   end
 
+  @spec reset_round(__MODULE__.data()) :: __MODULE__.data()
   defp reset_round(data) do
     %{data | seconds_left: nil}
   end
 
+  @spec reset_rounds(__MODULE__.data()) :: __MODULE__.data()
   defp reset_rounds(data) do
     %{data | rounds_finished: 0}
+  end
+
+  @spec format_seconds(number()) :: String.t() | {:error, any()}
+  defp format_seconds(seconds) do
+    Timex.Duration.from_seconds(seconds)
+    |> Timex.Format.Duration.Formatter.format(:humanized)
   end
 end
