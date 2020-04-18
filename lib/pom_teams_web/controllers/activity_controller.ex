@@ -21,11 +21,12 @@ defmodule PomTeamsWeb.ActivityController do
   defp send_resp_for_activity(conn, activity, {result_atom, msg}) do
     send_reply_to_chat(activity, msg)
 
-    resp_code = case result_atom do
-      :ok -> 200
-      :client_error -> 400
-      :server_error -> 500
-    end
+    resp_code =
+      case result_atom do
+        :ok -> 200
+        :client_error -> 400
+        :server_error -> 500
+      end
 
     send_resp(conn, resp_code, msg)
   end

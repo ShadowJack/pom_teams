@@ -23,7 +23,10 @@ defmodule PomTeams.PomTimerContext.PomTimerSupervisor do
   """
   @spec create_pom_timer(User.t(), String.t(), String.t(), String.t()) :: {:ok, pid}
   def create_pom_timer(user, service_url, conversation_id, bot_id) do
-    DynamicSupervisor.start_child(__MODULE__, {PomTimer, {user, service_url, conversation_id, bot_id}})
+    DynamicSupervisor.start_child(
+      __MODULE__,
+      {PomTimer, {user, service_url, conversation_id, bot_id}}
+    )
   end
 
   @doc """

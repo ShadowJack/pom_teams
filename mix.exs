@@ -20,7 +20,7 @@ defmodule PomTeams.MixProject do
   def application do
     [
       mod: {PomTeams.Application, []},
-      extra_applications: [:logger, :runtime_tools, :poison]
+      extra_applications: [:logger, :runtime_tools, :poison, :httpotion]
     ]
   end
 

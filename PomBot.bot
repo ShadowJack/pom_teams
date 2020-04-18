@@ -1,0 +1,19 @@
+{
+    "name": "PomBot",
+    "description": "",
+    "services": [
+        {
+            "type": "endpoint",
+            "appId": "69d8e50f-3e0d-4725-9966-1d91d2a2fa55",
+            "appPassword": "eYnfBua9rO0yh1Q+gZQYMQ==!eMS134E3c2U9iIs+8xY41SS3wgoZS1Xv95oGs9luF++YZMrqIDlZwwV6wSJufpgQ",
+            "channelService": "",
+            "endpoint": "http://localhost:4000/api/activity",
+            "id": "7dc9e760-8167-11ea-8434-a77ca9190546",
+            "name": "http://localhost:4000/api/activity"
+        }
+    ],
+    "padlock": "0QR/WMwfkde2wlhuXuEYCQ==!D/qqPh50QD0qZKfhcQgNsInEy4oty8UZY1YeEtbOLgntukIp4YncuJ0bYsogIyTf",
+    "version": "2.0",
+    "overrides": null,
+    "path": "/Users/shadowjack/Documents/Work/Elixir/pom_teams/PomBot.bot"
+}

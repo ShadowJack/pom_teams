@@ -133,8 +133,20 @@ defmodule PomTeams.PomTimerContext.PomTimer do
   end
 
   def handle_event({:call, from}, @action_start, @state_stopped, data) do
-    Logger.info("The timer is starting")
     data = start_round_timer(data)
+    left = format_seconds(data.seconds_left)
+    msg = "Pomodoro round has started. #{left} of work are ahead!"
+    {:next_state, @state_running, data, [{:reply, from, {:ok, msg}}]}
+  end
+
+  def handle_event({:call, from}, @action_start, @state_on_break, data) do
+    data =
+      data
+      # stop break timer
+      |> remove_internal_timer()
+      # start a new round
+      |> start_round_timer()
+
     left = format_seconds(data.seconds_left)
     msg = "Pomodoro round has started. #{left} of work are ahead!"
     {:next_state, @state_running, data, [{:reply, from, {:ok, msg}}]}
@@ -232,7 +244,13 @@ defmodule PomTeams.PomTimerContext.PomTimer do
   @doc """
   Handle finished round event
   """
-  def handle_event(:info, :round_finished, _state, %{user: user, bot_id: bot_id, service_url: service_url, conversation_id: conversation_id} = data) do
+  def handle_event(
+        :info,
+        :round_finished,
+        _state,
+        %{user: user, bot_id: bot_id, service_url: service_url, conversation_id: conversation_id} =
+          data
+      ) do
     updated_data =
       data
       # remove the current timer if it's present
@@ -284,11 +302,34 @@ defmodule PomTeams.PomTimerContext.PomTimer do
       data
       # remove the current timer if it's present
       |> remove_internal_timer()
-      # start the next round
-      |> start_round_timer()
+
+    # notify user that the break has finished
+    activity = %Activity{
+      type: "message",
+      serviceUrl: data.service_url,
+      conversation: %ExMicrosoftBot.Models.ConversationAccount{
+        id: data.conversation_id
+      },
+      recipient: %ExMicrosoftBot.Models.ChannelAccount{
+        id: data.user.id,
+        name: data.user.name
+      },
+      from: %ExMicrosoftBot.Models.ChannelAccount{
+        id: data.bot_id,
+        name: "PomBot"
+      },
+      text: """
+      A break has finished. To start the next pomodoro round type `pomstart`.
+      """
+    }
+
+    case ConversationsClient.send_to_conversation(data.conversation_id, activity) do
+      :ok -> :ok
+      error -> Logger.error("Error sending message to the user: #{inspect(error)}")
+    end
 
     # set correct state
-    {:next_state, @state_running, updated_data}
+    {:next_state, @state_stopped, updated_data}
   end
 
   @doc """

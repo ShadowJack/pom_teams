@@ -107,12 +107,12 @@ defmodule PomTeams.PomTimerTest do
     end
 
     test "a long break is started" do
-      user = %User{build_user() | short_break_minutes: 0}
+      user = %User{build_user() | short_break_minutes: 0, short_breaks_limit: 1}
       timer = start_timer_link(user)
 
       Process.send(timer, :round_finished, [])
       # skip the short break
-      Process.sleep(1500)
+      PomTimer.start(timer)
       assert {:ok, :running} == PomTimer.get_state(timer)
 
       Process.send(timer, :round_finished, [])
@@ -126,7 +126,9 @@ defmodule PomTeams.PomTimerTest do
   end
 
   defp start_timer_link(user \\ build_user()) do
-    assert {:ok, timer} = PomTimer.start_link({user, "http://serviceurl.com", "conv_id", "bot_id"})
+    assert {:ok, timer} =
+             PomTimer.start_link({user, "http://serviceurl.com", "conv_id", "bot_id"})
+
     assert {:ok, _msg} = PomTimer.start(timer)
     timer
   end

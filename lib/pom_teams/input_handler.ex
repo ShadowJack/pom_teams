@@ -54,7 +54,7 @@ defmodule PomTeams.InputHandler do
       bot_id = activity.recipient.id
       service_url = activity.serviceUrl
       conversation_id = activity.conversation.id
-      {:ok, pid} = PomTimerSupervisor.create_pom_timer(user, service_url, conversation_id, bot_id )
+      {:ok, pid} = PomTimerSupervisor.create_pom_timer(user, service_url, conversation_id, bot_id)
 
       PomTimer.start(pid)
     end)
