@@ -13,9 +13,6 @@ defmodule PomTeams.UserContext.User do
     # user name
     field :name, :string
 
-    # id of the last conversation with this user
-    field :conversation_id, :string
-
     # time interval for the pomodoro
     field :pomodoro_minutes, :integer
 
@@ -32,12 +29,12 @@ defmodule PomTeams.UserContext.User do
   @doc """
   A changeset for user creation
   """
-  @spec changeset_for_create(User.t(), String.t(), String.t(), String.t()) :: Ecto.Changeset.t()
-  def changeset_for_create(user, external_id, name, conversation_id) do
-    params = %{external_id: external_id, name: name, conversation_id: conversation_id}
+  @spec changeset_for_create(User.t(), String.t(), String.t()) :: Ecto.Changeset.t()
+  def changeset_for_create(user, external_id, name) do
+    params = %{external_id: external_id, name: name}
 
     user
-    |> cast(params, [:external_id, :name, :conversation_id])
-    |> validate_required([:external_id, :conversation_id])
+    |> cast(params, [:external_id, :name])
+    |> validate_required([:external_id])
   end
 end

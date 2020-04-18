@@ -11,8 +11,9 @@ defmodule PomTeams.PomTimerContext.PomTimer do
 
   @type data :: %{
           user: User.t(),
-          bot_id: String.t(),
           service_url: String.t(),
+          conversation_id: String.t(),
+          bot_id: String.t(),
           rounds_finished: number(),
           # Reference to the current timer 
           # that will ring at the end of the round
@@ -39,7 +40,7 @@ defmodule PomTeams.PomTimerContext.PomTimer do
   Start a new timer
   """
   @spec start_link(any()) :: :gen_statem.start_ret()
-  def start_link({user, _, _} = args) do
+  def start_link({user, _, _, _} = args) do
     name = {:via, Registry, {PomTeams.PomTimerContext.PomTimersRegistry, user.external_id}}
     GenStateMachine.start_link(__MODULE__, args, name: name)
   end
@@ -104,11 +105,12 @@ defmodule PomTeams.PomTimerContext.PomTimer do
   # Implementation
   #
 
-  def init({user, bot_id, service_url}) do
+  def init({user, service_url, conversation_id, bot_id}) do
     data = %{
       user: user,
-      bot_id: bot_id,
       service_url: service_url,
+      conversation_id: conversation_id,
+      bot_id: bot_id,
       timer_ref: nil,
       rounds_finished: 0,
       seconds_left: nil
@@ -230,7 +232,7 @@ defmodule PomTeams.PomTimerContext.PomTimer do
   @doc """
   Handle finished round event
   """
-  def handle_event(:info, :round_finished, _state, %{user: user, bot_id: bot_id, service_url: service_url} = data) do
+  def handle_event(:info, :round_finished, _state, %{user: user, bot_id: bot_id, service_url: service_url, conversation_id: conversation_id} = data) do
     updated_data =
       data
       # remove the current timer if it's present
@@ -247,7 +249,7 @@ defmodule PomTeams.PomTimerContext.PomTimer do
       type: "message",
       serviceUrl: service_url,
       conversation: %ExMicrosoftBot.Models.ConversationAccount{
-        id: user.conversation_id
+        id: conversation_id
       },
       recipient: %ExMicrosoftBot.Models.ChannelAccount{
         id: user.id,
@@ -263,7 +265,7 @@ defmodule PomTeams.PomTimerContext.PomTimer do
       """
     }
 
-    case ConversationsClient.send_to_conversation(user.conversation_id, activity) do
+    case ConversationsClient.send_to_conversation(conversation_id, activity) do
       :ok -> :ok
       error -> Logger.error("Error sending message to the user: #{inspect(error)}")
     end

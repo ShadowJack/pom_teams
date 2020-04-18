@@ -126,7 +126,7 @@ defmodule PomTeams.PomTimerTest do
   end
 
   defp start_timer_link(user \\ build_user()) do
-    assert {:ok, timer} = PomTimer.start_link({user, "xyz", "http://serviceurl.com"})
+    assert {:ok, timer} = PomTimer.start_link({user, "http://serviceurl.com", "conv_id", "bot_id"})
     assert {:ok, _msg} = PomTimer.start(timer)
     timer
   end
@@ -134,7 +134,6 @@ defmodule PomTeams.PomTimerTest do
   defp build_user() do
     %User{
       id: "test_user",
-      conversation_id: "conversation123",
       name: "Test user",
       pomodoro_minutes: 10,
       short_break_minutes: 1,

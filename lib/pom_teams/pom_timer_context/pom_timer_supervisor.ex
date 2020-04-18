@@ -21,9 +21,9 @@ defmodule PomTeams.PomTimerContext.PomTimerSupervisor do
   @doc """
   Create a new pomodoro timer
   """
-  @spec create_pom_timer(User.t(), String.t(), String.t()) :: {:ok, pid}
-  def create_pom_timer(user, bot_id, service_url) do
-    DynamicSupervisor.start_child(__MODULE__, {PomTimer, {user, bot_id, service_url}})
+  @spec create_pom_timer(User.t(), String.t(), String.t(), String.t()) :: {:ok, pid}
+  def create_pom_timer(user, service_url, conversation_id, bot_id) do
+    DynamicSupervisor.start_child(__MODULE__, {PomTimer, {user, service_url, conversation_id, bot_id}})
   end
 
   @doc """

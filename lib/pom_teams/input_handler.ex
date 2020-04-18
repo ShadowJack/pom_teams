@@ -47,13 +47,14 @@ defmodule PomTeams.InputHandler do
       user =
         UserContext.get_or_create!(
           activity.from.id,
-          activity.from.name,
-          activity.conversation.id
+          activity.from.name
         )
 
       # start a timer
       bot_id = activity.recipient.id
-      {:ok, pid} = PomTimerSupervisor.create_pom_timer(user, bot_id, activity.serviceUrl)
+      service_url = activity.serviceUrl
+      conversation_id = activity.conversation.id
+      {:ok, pid} = PomTimerSupervisor.create_pom_timer(user, service_url, conversation_id, bot_id )
 
       PomTimer.start(pid)
     end)
