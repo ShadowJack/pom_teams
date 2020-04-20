@@ -16,3 +16,6 @@ config :pom_teams, PomTeamsWeb.Endpoint,
 
 # Print only warnings and errors during test
 config :logger, level: :warn
+
+# Dependency injection
+config :pom_teams, :message_sender, PomTeams.Fakes.MessageSenderMock

@@ -6,8 +6,7 @@ defmodule PomTeams.PomTimerContext.PomTimer do
   require Logger
 
   alias PomTeams.UserContext.User
-  alias ExMicrosoftBot.Client.Conversations, as: ConversationsClient
-  alias ExMicrosoftBot.Models.Activity
+  @message_sender Application.get_env(:pom_teams, :message_sender)
 
   @type data :: %{
           user: User.t(),
@@ -15,8 +14,8 @@ defmodule PomTeams.PomTimerContext.PomTimer do
           conversation_id: String.t(),
           bot_id: String.t(),
           rounds_finished: number(),
-          # Reference to the current timer 
-          # that will ring at the end of the round
+          # Reference to the current timer
+          # that will ring at the end of the round or break
           timer_ref: :timer.tref() | nil,
           # Seconds left until the end of the round
           # nil at the start when the timer is not started yet
@@ -262,31 +261,12 @@ defmodule PomTeams.PomTimerContext.PomTimer do
       # start the break timer
       |> start_break_timer()
 
-    # TODO: extract into a separate module
-    activity = %Activity{
-      type: "message",
-      serviceUrl: service_url,
-      conversation: %ExMicrosoftBot.Models.ConversationAccount{
-        id: conversation_id
-      },
-      recipient: %ExMicrosoftBot.Models.ChannelAccount{
-        id: user.id,
-        name: user.name
-      },
-      from: %ExMicrosoftBot.Models.ChannelAccount{
-        id: bot_id,
-        name: "PomBot"
-      },
-      text: """
+    @message_sender.send_text(user, service_url, conversation_id, bot_id,
+      """
       Hooray, another pomodoro is finished!
       A well-deserved break for #{calc_seconds_in_break(updated_data)} minutes is starting.
       """
-    }
-
-    case ConversationsClient.send_to_conversation(conversation_id, activity) do
-      :ok -> :ok
-      error -> Logger.error("Error sending message to the user: #{inspect(error)}")
-    end
+    )
 
     # set correct state
     {:next_state, @state_on_break, updated_data}
@@ -304,29 +284,11 @@ defmodule PomTeams.PomTimerContext.PomTimer do
       |> remove_internal_timer()
 
     # notify user that the break has finished
-    activity = %Activity{
-      type: "message",
-      serviceUrl: data.service_url,
-      conversation: %ExMicrosoftBot.Models.ConversationAccount{
-        id: data.conversation_id
-      },
-      recipient: %ExMicrosoftBot.Models.ChannelAccount{
-        id: data.user.id,
-        name: data.user.name
-      },
-      from: %ExMicrosoftBot.Models.ChannelAccount{
-        id: data.bot_id,
-        name: "PomBot"
-      },
-      text: """
+    @message_sender.send_text(data.user, data.service_url, data.conversation_id, data.bot_id,
+      """
       A break has finished. To start the next pomodoro round type `pomstart`.
       """
-    }
-
-    case ConversationsClient.send_to_conversation(data.conversation_id, activity) do
-      :ok -> :ok
-      error -> Logger.error("Error sending message to the user: #{inspect(error)}")
-    end
+    )
 
     # set correct state
     {:next_state, @state_stopped, updated_data}
@@ -335,7 +297,7 @@ defmodule PomTeams.PomTimerContext.PomTimer do
   @doc """
   Catch-all handler
   """
-  def handle_event({:call, from}, event_content, state, data) do
+  def handle_event({:call, from}, _event_content, state, data) do
     {:next_state, state, data, [{:reply, from, :wrong_event}]}
   end
 

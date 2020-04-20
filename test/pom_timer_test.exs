@@ -3,6 +3,7 @@ defmodule PomTeams.PomTimerTest do
 
   alias PomTeams.PomTimerContext.PomTimer
   alias PomTeams.UserContext.User
+  alias PomTeams.Fakes.MessageSenderMock
 
   test "start action starts the timer:)" do
     timer = start_timer_link()
@@ -95,6 +96,21 @@ defmodule PomTeams.PomTimerTest do
       assert {:ok, 1} == PomTimer.get_rounds_finished(timer)
     end
 
+    test "a user is notified" do
+      user = build_user()
+      timer = start_timer_link(user)
+
+      Process.send(timer, :round_finished, [])
+
+      # a timeout to make sure events are processed
+      Process.sleep(300)
+
+      message = MessageSenderMock.get_state() 
+              |> Keyword.get(:send_text) 
+              |> Map.get(user.id)
+      assert message =~ "pomodoro is finished"
+    end
+
     test "a short break is started" do
       timer = start_timer_link()
 
@@ -125,6 +141,24 @@ defmodule PomTeams.PomTimerTest do
     end
   end
 
+  describe "when break is finished" do
+    test "user is notified" do
+      user = build_user()
+      timer = start_timer_link(user)
+
+      Process.send(timer, :round_finished, [])
+      Process.send(timer, :break_finished, [])
+
+      # a timeout to make sure events are processed
+      Process.sleep(300)
+
+      message = MessageSenderMock.get_state() 
+              |> Keyword.get(:send_text) 
+              |> Map.get(user.id)
+      assert message =~ "break has finished"
+    end
+  end
+
   defp start_timer_link(user \\ build_user()) do
     assert {:ok, timer} =
              PomTimer.start_link({user, "http://serviceurl.com", "conv_id", "bot_id"})
@@ -135,7 +169,8 @@ defmodule PomTeams.PomTimerTest do
 
   defp build_user() do
     %User{
-      id: "test_user",
+      id: "#{Ecto.UUID.generate()}",
+      external_id: "teams_#{Ecto.UUID.generate()}",
       name: "Test user",
       pomodoro_minutes: 10,
       short_break_minutes: 1,
