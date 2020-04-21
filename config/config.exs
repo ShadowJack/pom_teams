@@ -34,7 +34,7 @@ config :ex_microsoftbot,
   using_bot_emulator: true
 
 # dependency injection
-config :pom_teams, :message_sender, PomTeams.CommunicationContext.MessageSender.Impl
+config :pom_teams, :message_sender, PomTeams.CommunicationContext.MessageSenderImpl
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
