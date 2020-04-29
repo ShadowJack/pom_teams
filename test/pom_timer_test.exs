@@ -159,6 +159,17 @@ defmodule PomTeams.PomTimerTest do
     end
   end
 
+  test "start action finishes the break and starts the timer" do
+    timer = start_timer_link()
+    assert {:ok, :running} == PomTimer.get_state(timer)
+
+    Process.send(timer, :round_finished, [])
+    assert {:ok, _msg} = PomTimer.start(timer)
+    Process.sleep(1500)
+
+    assert {:ok, running} = PomTimer.get_state(timer)
+  end
+
   defp start_timer_link(user \\ build_user()) do
     assert {:ok, timer} =
              PomTimer.start_link({user, "http://serviceurl.com", "conv_id", "bot_id"})
