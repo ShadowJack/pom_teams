@@ -10,6 +10,8 @@ defmodule PomTeams.Application do
     children = [
       # Start the Ecto repository
       PomTeams.Repo,
+      # Start the pubsub system
+      {Phoenix.PubSub, name: PomTeams.PubSub},
       # Start the endpoint when the application starts
       PomTeamsWeb.Endpoint,
       # Start a supervisor for pomodoro timers management

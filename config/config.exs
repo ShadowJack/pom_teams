@@ -16,7 +16,7 @@ config :pom_teams, PomTeamsWeb.Endpoint,
   url: [host: "localhost"],
   secret_key_base: "FpzsEe3oQeJDj5wzQyXU8wccOknQqaTd8oCHKW45Pa49mtSPvIiEwN62X9SgggGh",
   render_errors: [view: PomTeamsWeb.ErrorView, accepts: ~w(json)],
-  pubsub: [name: PomTeams.PubSub, adapter: Phoenix.PubSub.PG2],
+  pubsub_server: PomTeams.PubSub,
   live_view: [signing_salt: "0lk3mKyV"]
 
 # Configures Elixir's Logger
