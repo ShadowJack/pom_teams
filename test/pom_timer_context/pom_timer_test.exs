@@ -45,6 +45,8 @@ defmodule PomTeams.PomTimerTest do
   describe "reset action" do
     test "resets the paused timer to initial state" do
       timer = start_timer_link()
+      Process.send(timer, :round_finished, [])
+      PomTimer.start(timer)
       Process.sleep(1500)
       assert {:ok, _msg} = PomTimer.pause(timer)
 
@@ -52,9 +54,7 @@ defmodule PomTeams.PomTimerTest do
 
       assert {:ok, 0} = PomTimer.get_seconds_elapsed(timer)
       assert {:ok, :stopped} = PomTimer.get_state(timer)
-
-      # TODO: check rounds count was reset 
-      # by manually sending :round_finished events
+      assert {:ok, 0} = PomTimer.get_rounds_finished(timer)
     end
 
     test "restarts the running timer" do
@@ -68,23 +68,20 @@ defmodule PomTeams.PomTimerTest do
       {:ok, seconds_elapsed} = PomTimer.get_seconds_elapsed(timer)
       assert seconds_elapsed < prev_seconds_elapsed
       assert {:ok, :running} = PomTimer.get_state(timer)
-
-      # TODO: check rounds count was reset 
-      # by manually sending :round_finished events
     end
   end
 
   test "stop action pauses and resets everything" do
     timer = start_timer_link()
+    Process.send(timer, :round_finished, [])
+    PomTimer.start(timer)
     Process.sleep(1500)
 
     assert {:ok, _msg} = PomTimer.stop(timer)
 
     assert {:ok, 0} = PomTimer.get_seconds_elapsed(timer)
     assert {:ok, :stopped} = PomTimer.get_state(timer)
-
-    # TODO: check rounds count was reset 
-    # by manually sending :round_finished events
+    assert {:ok, 0} = PomTimer.get_rounds_finished(timer)
   end
 
   describe "when round is finished" do
@@ -163,15 +160,50 @@ defmodule PomTeams.PomTimerTest do
     end
   end
 
-  test "start action finishes the break and starts the timer" do
-    timer = start_timer_link()
-    assert {:ok, :running} == PomTimer.get_state(timer)
+  describe "when break is in progress" do
+    test "start action finishes the break and starts the timer" do
+      timer = start_timer_link()
+      Process.send(timer, :round_finished, [])
 
-    Process.send(timer, :round_finished, [])
-    assert {:ok, _msg} = PomTimer.start(timer)
-    Process.sleep(1500)
+      assert {:ok, _msg} = PomTimer.start(timer)
 
-    assert {:ok, running} = PomTimer.get_state(timer)
+      assert {:ok, :running} = PomTimer.get_state(timer)
+    end
+
+    test "pause action finishes the break" do
+      timer = start_timer_link()
+      Process.send(timer, :round_finished, [])
+      Process.sleep(1500)
+
+      assert {:ok, _mst} = PomTimer.pause(timer)
+
+      assert {:ok, :stopped} = PomTimer.get_state(timer)
+      {:ok, 0} = PomTimer.get_seconds_elapsed(timer)
+    end
+
+    test "reset action finishes the break and resets everything" do
+      timer = start_timer_link()
+      Process.send(timer, :round_finished, [])
+      Process.sleep(1500)
+
+      assert {:ok, _mst} = PomTimer.reset(timer)
+
+      assert {:ok, :stopped} = PomTimer.get_state(timer)
+      {:ok, 0} = PomTimer.get_seconds_elapsed(timer)
+      {:ok, 0} = PomTimer.get_rounds_finished(timer)
+    end
+
+    test "stop action finishes the break and resets everything" do
+      timer = start_timer_link()
+      Process.send(timer, :round_finished, [])
+      Process.sleep(1500)
+
+      assert {:ok, _mst} = PomTimer.reset(timer)
+
+      assert {:ok, :stopped} = PomTimer.get_state(timer)
+      {:ok, 0} = PomTimer.get_seconds_elapsed(timer)
+      {:ok, 0} = PomTimer.get_rounds_finished(timer)
+    end
   end
 
   defp start_timer_link(user \\ build_user()) do

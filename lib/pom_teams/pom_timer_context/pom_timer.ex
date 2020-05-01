@@ -143,6 +143,8 @@ defmodule PomTeams.PomTimerContext.PomTimer do
       data
       # stop break timer
       |> remove_internal_timer()
+      # clean-up seconds_left
+      |> reset_seconds_left()
       # start a new round
       |> start_round_timer()
 
@@ -162,6 +164,16 @@ defmodule PomTeams.PomTimerContext.PomTimer do
   def handle_event({:call, from}, @action_pause, @state_running, data) do
     msg = "Pomodoro timer is paused."
     {:next_state, @state_stopped, remove_internal_timer(data), [{:reply, from, {:ok, msg}}]}
+  end
+
+  def handle_event({:call, from}, @action_pause, @state_on_break, data) do
+    updated_data =
+      data
+      |> remove_internal_timer()
+      |> reset_seconds_left()
+
+    msg = "Pomodoro timer is paused."
+    {:next_state, @state_stopped, updated_data, [{:reply, from, {:ok, msg}}]}
   end
 
   @doc """
@@ -189,6 +201,17 @@ defmodule PomTeams.PomTimerContext.PomTimer do
     {:next_state, @state_running, updated_data, [{:reply, from, {:ok, msg}}]}
   end
 
+  def handle_event({:call, from}, @action_reset, @state_on_break, data) do
+    updated_data =
+      data
+      |> remove_internal_timer()
+      |> reset_seconds_left()
+      |> reset_rounds()
+
+    msg = "The timer has been reset."
+    {:next_state, @state_stopped, updated_data, [{:reply, from, {:ok, msg}}]}
+  end
+
   @doc """
   Handle stop action
   """
@@ -207,6 +230,17 @@ defmodule PomTeams.PomTimerContext.PomTimer do
     updated_data =
       data
       |> reset_round
+      |> reset_rounds()
+
+    msg = "The timer has been stopped."
+    {:next_state, @state_stopped, updated_data, [{:reply, from, {:ok, msg}}]}
+  end
+
+  def handle_event({:call, from}, @action_stop, @state_on_break, data) do
+    updated_data =
+      data
+      |> remove_internal_timer()
+      |> reset_seconds_left()
       |> reset_rounds()
 
     msg = "The timer has been stopped."
@@ -255,9 +289,9 @@ defmodule PomTeams.PomTimerContext.PomTimer do
       # remove the current timer if it's present
       |> remove_internal_timer()
       # reset seconds left
-      |> Map.put(:seconds_left, nil)
+      |> reset_seconds_left()
       # increase the number of finished rounds
-      |> Map.put(:rounds_finished, data.rounds_finished + 1)
+      |> increment_rounds_finished()
       # start the break timer
       |> start_break_timer()
 
@@ -400,5 +434,15 @@ defmodule PomTeams.PomTimerContext.PomTimer do
   defp format_seconds(seconds) do
     Timex.Duration.from_seconds(seconds)
     |> Timex.Format.Duration.Formatter.format(:humanized)
+  end
+
+  @spec reset_seconds_left(__MODULE__.data()) :: __MODULE__.data()
+  defp reset_seconds_left(data) do
+    Map.put(data, :seconds_left, nil)
+  end
+
+  @spec increment_rounds_finished(__MODULE__.data()) :: __MODULE__.data()
+  defp increment_rounds_finished(data) do
+    Map.put(data, :rounds_finished, data.rounds_finished + 1)
   end
 end
