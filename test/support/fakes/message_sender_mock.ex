@@ -14,14 +14,14 @@ defmodule PomTeams.Fakes.MessageSenderMock do
     Agent.start_link(fn -> [send_text: %{}, reply_with_text: %{}] end, name: __MODULE__)
   end
 
-
   @doc false
   @impl MessageSender
   def send_text(user, _service_url, _conversation_id, _bot_id, text) do
     # store last sent message for each user
-    Agent.update(__MODULE__, fn state -> 
-      Keyword.update!(state, :send_text, &(Map.put(&1, user.id, text)))
+    Agent.update(__MODULE__, fn state ->
+      Keyword.update!(state, :send_text, &Map.put(&1, user.id, text))
     end)
+
     :ok
   end
 
@@ -29,9 +29,10 @@ defmodule PomTeams.Fakes.MessageSenderMock do
   @impl MessageSender
   def reply_with_text(activity, text) do
     # store last sent reply for each user
-    Agent.update(__MODULE__, fn state -> 
-      Keyword.update!(state, :reply_with_text, &(Map.put(&1, activity.id, text)))
+    Agent.update(__MODULE__, fn state ->
+      Keyword.update!(state, :reply_with_text, &Map.put(&1, activity.id, text))
     end)
+
     :ok
   end
 
@@ -42,5 +43,4 @@ defmodule PomTeams.Fakes.MessageSenderMock do
   def get_state() do
     Agent.get(__MODULE__, fn state -> state end)
   end
-
 end

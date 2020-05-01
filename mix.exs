@@ -39,7 +39,7 @@ defmodule PomTeams.MixProject do
       {:ecto_sql, "~> 3.1"},
       {:postgrex, ">= 0.0.0"},
       {:jason, "~> 1.0"},
-      {:plug_cowboy, "~> 2.1"},
+      {:plug_cowboy, "~> 2.2"},
       {:gen_state_machine, "~> 2.0"},
       {:ex_microsoftbot, github: "zabirauf/ex_microsoftbot"},
       {:phoenix_live_dashboard, "~> 0.1"}

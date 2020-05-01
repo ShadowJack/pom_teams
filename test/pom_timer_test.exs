@@ -105,9 +105,11 @@ defmodule PomTeams.PomTimerTest do
       # a timeout to make sure events are processed
       Process.sleep(300)
 
-      message = MessageSenderMock.get_state() 
-              |> Keyword.get(:send_text) 
-              |> Map.get(user.id)
+      message =
+        MessageSenderMock.get_state()
+        |> Keyword.get(:send_text)
+        |> Map.get(user.id)
+
       assert message =~ "pomodoro is finished"
     end
 
@@ -152,9 +154,11 @@ defmodule PomTeams.PomTimerTest do
       # a timeout to make sure events are processed
       Process.sleep(300)
 
-      message = MessageSenderMock.get_state() 
-              |> Keyword.get(:send_text) 
-              |> Map.get(user.id)
+      message =
+        MessageSenderMock.get_state()
+        |> Keyword.get(:send_text)
+        |> Map.get(user.id)
+
       assert message =~ "break has finished"
     end
   end

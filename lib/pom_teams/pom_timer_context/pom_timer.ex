@@ -261,12 +261,10 @@ defmodule PomTeams.PomTimerContext.PomTimer do
       # start the break timer
       |> start_break_timer()
 
-    @message_sender.send_text(user, service_url, conversation_id, bot_id,
-      """
-      Hooray, another pomodoro is finished!
-      A well-deserved break for #{calc_seconds_in_break(updated_data)} minutes is starting.
-      """
-    )
+    @message_sender.send_text(user, service_url, conversation_id, bot_id, """
+    Hooray, another pomodoro is finished!
+    A well-deserved break for #{calc_seconds_in_break(updated_data)} minutes is starting.
+    """)
 
     # set correct state
     {:next_state, @state_on_break, updated_data}
@@ -284,11 +282,9 @@ defmodule PomTeams.PomTimerContext.PomTimer do
       |> remove_internal_timer()
 
     # notify user that the break has finished
-    @message_sender.send_text(data.user, data.service_url, data.conversation_id, data.bot_id,
-      """
-      A break has finished. To start the next pomodoro round type `pomstart`.
-      """
-    )
+    @message_sender.send_text(data.user, data.service_url, data.conversation_id, data.bot_id, """
+    A break has finished. To start the next pomodoro round type `pomstart`.
+    """)
 
     # set correct state
     {:next_state, @state_stopped, updated_data}
