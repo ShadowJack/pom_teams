@@ -297,7 +297,7 @@ defmodule PomTeams.PomTimerContext.PomTimer do
 
     @message_sender.send_text(user, service_url, conversation_id, bot_id, """
     Hooray, another pomodoro is finished!
-    A well-deserved break for #{calc_seconds_in_break(updated_data)} minutes is starting.
+    A well-deserved break for #{format_seconds(calc_seconds_in_break(updated_data))} is starting.
     """)
 
     # set correct state
