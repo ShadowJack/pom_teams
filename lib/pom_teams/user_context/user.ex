@@ -37,4 +37,16 @@ defmodule PomTeams.UserContext.User do
     |> cast(params, [:external_id, :name])
     |> validate_required([:external_id])
   end
+
+  @doc """
+  A changeset for settings editing
+  """
+  @spec change_settings(User.t(), Map.t()) :: Ecto.Changeset.t()
+  def change_settings(user, params) do
+    user
+    |> cast(params, [:pomodoro_minutes, :short_break_minutes, :long_break_minutes, :short_breaks_limit])
+    |> validate_number(:pomodoro_minutes, greater_than: 0, less_than: 24 * 60, message: "One pomodoro round should be more than 1 minute and less than 1 day")
+    |> validate_number(:short_break_minutes, greater_than: 0, less_than: 24 * 60, message: "A short break should be more than 1 minute and less than 1 day")
+    |> validate_number(:long_break_minutes, greater_than: 0, less_than: 24 * 60, message: "A long break should be more than 1 minute and less than 1 day")
+  end
 end

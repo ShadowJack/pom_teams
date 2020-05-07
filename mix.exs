@@ -36,6 +36,7 @@ defmodule PomTeams.MixProject do
       {:phoenix, "~> 1.5.0"},
       {:phoenix_pubsub, "~> 2.0"},
       {:phoenix_ecto, "~> 4.0"},
+      {:phoenix_html, "~> 2.14"},
       {:ecto_sql, "~> 3.1"},
       {:postgrex, ">= 0.0.0"},
       {:jason, "~> 1.0"},

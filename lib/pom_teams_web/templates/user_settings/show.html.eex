@@ -1,0 +1,29 @@
+<h1>Show Setting</h1>
+
+<ul>
+
+  <li>
+    <strong>Pomodoro minutes:</strong>
+    <%= @setting.pomodoro_minutes %>
+  </li>
+
+  <li>
+    <strong>Short break minutes:</strong>
+    <%= @setting.short_break_minutes %>
+  </li>
+
+  <li>
+    <strong>Long break minutes:</strong>
+    <%= @setting.long_break_minutes %>
+  </li>
+
+  <li>
+    <strong>Short breaks limit:</strong>
+    <%= @setting.short_breaks_limit %>
+  </li>
+
+</ul>
+
+<span>
+  <%# link "Edit", to: Routes.user_settings_path(@conn, :edit, @user) %>
+</span>

@@ -27,7 +27,7 @@
         {
             "entityId": "settingsTab",
             "name": "Settings",
-            "contentUrl": "https://test.com/settings",
+            "contentUrl": "https://beautiful-scented-chital.gigalixirapp.com/settings",
             "scopes": [
                 "personal"
             ]
