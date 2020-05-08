@@ -1,9 +1,10 @@
 {
-    "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.5/MicrosoftTeams.schema.json",
-    "manifestVersion": "1.5",
+    "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.6/MicrosoftTeams.schema.json",
+    "manifestVersion": "1.6",
     "version": "1.0.0",
+    "showLoadingIndicator": false,
     "id": "ef93e25a-1024-4eeb-9945-398f1c8c5d5f",
-    "packageName": "shadowjack.pom_bot",
+    "packageName": "shadowjack.pom_bot_v2",
     "developer": {
         "name": "Konstantin Pavlovsky",
         "websiteUrl": "https://github.com/ShadowJack",
@@ -73,6 +74,6 @@
         "messageTeamMembers"
     ],
     "validDomains": [
-        "test.com"
+        "beautiful-scented-chital.gigalixirapp.com"
     ]
 }

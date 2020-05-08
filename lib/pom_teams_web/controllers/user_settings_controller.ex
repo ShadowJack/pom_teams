@@ -7,7 +7,7 @@ defmodule PomTeamsWeb.UserSettingsController do
   require Logger
 
   def show(conn, params) do
-    Logger.info(params)
+    Logger.info(inspect(params))
 
     # setting = UserContext.get_or_create!()
     user = %User{}
